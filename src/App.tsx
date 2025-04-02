@@ -17,10 +17,10 @@ function App() {
             padding: "16px 32px",
             borderRadius: "17.495px",
             fontSize: "18px",
-            fontWeight: "600"
+            fontWeight: "400"
           }}
         >
-          Hello
+          Germanys Far Right
         </Button>
         <Button 
           size="4" 
@@ -29,7 +29,7 @@ function App() {
             padding: "16px 32px",
             borderRadius: "17.495px",
             fontSize: "18px",
-            fontWeight: "600",
+            fontWeight: "400",
             color: "#0000FF",
             border: "1px solid #0000FF"
           }}
