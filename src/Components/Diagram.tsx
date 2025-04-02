@@ -12,26 +12,28 @@ const Diagram: React.FC<DiagramProps> = ({
             className={`diagram-container ${className}`}
             style={{
                 width: '100%',
-                height: 'calc(100vh - 80px)',
+                height: '100vh', 
                 display: 'flex',
                 justifyContent: 'center',
                 alignItems: 'center',
-                overflow: 'hidden',
-                padding: '0 16px'
+                overflow: 'hidden', // Prevents scrolling
+                position: 'fixed', // Fixes the container in viewport
+                top: 0,
+                left: 0
             }}
         >
             <svg 
                 xmlns="http://www.w3.org/2000/svg" 
                 id="Layer_1" 
-                width="100%"
-                height="100%"
                 viewBox="0 0 1920 1080"
                 preserveAspectRatio="xMidYMid meet"
                 style={{
-                    maxWidth: '100%',
-                    maxHeight: '100%',
+                    width: 'auto', // Auto width based on aspect ratio
+                    height: 'auto', // Auto height based on aspect ratio
+                    maxWidth: '98vw', // Slightly less than viewport width
+                    maxHeight: '98vh', // Slightly less than viewport height
                     display: 'block',
-                    margin: '0 auto'
+                    objectFit: 'contain' // Ensures content is visible
                 }}
             >
                 <defs>
