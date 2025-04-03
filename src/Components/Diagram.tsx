@@ -1,41 +1,46 @@
-import React from 'react';
+export type DiagramType = 'main' | 'alternative1' | 'alternative2';
 
-interface DiagramProps {
+export interface DiagramProps {
     className?: string;
+    diagramType: DiagramType;  
+    onDiagramChange?: (type: DiagramType) => void;  
 }
-
-const Diagram: React.FC<DiagramProps> = ({ 
-    className = '' 
-}) => {
-    return (
-        <div 
-            className={`diagram-container ${className}`}
-            style={{
-                width: '100%',
-                height: '100vh', 
-                display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center',
-                overflow: 'hidden', // Prevents scrolling
-                position: 'fixed', // Fixes the container in viewport
-                top: 0,
-                left: 0
-            }}
-        >
-            <svg 
-                xmlns="http://www.w3.org/2000/svg" 
-                id="Layer_1" 
-                viewBox="0 0 1920 1080"
-                preserveAspectRatio="xMidYMid meet"
-                style={{
-                    width: 'auto', // Auto width based on aspect ratio
-                    height: 'auto', // Auto height based on aspect ratio
-                    maxWidth: '98vw', // Slightly less than viewport width
-                    maxHeight: '98vh', // Slightly less than viewport height
-                    display: 'block',
-                    objectFit: 'contain' // Ensures content is visible
-                }}
-            >
+const getDiagramContent = (type: DiagramType) => {
+    switch (type) {
+        case 'alternative1':
+            return (
+                <>
+                    <defs>
+                        <style>
+                            {`.cls-1,.cls-2{fill:#00f}.cls-4{fill:none;stroke:#00f;stroke-miterlimit:10}.cls-5,.cls-6{letter-spacing:0}.cls-2{font-size:20.11px;font-family:MyriadPro-Regular,"Myriad Pro"}`}
+                        </style>
+                    </defs>
+                    <rect width="400" height="200" x="760" y="440" className="cls-4" rx="17.49" ry="17.49"/>
+                    <text style={{fontSize:"32px", fontFamily:"MyriadPro-Regular, Myriad Pro", fill:"#00f"}} transform="translate(828.27 530.79)">
+                        <tspan x="0" y="0">Alternative View 1</tspan>
+                    </text>
+                </>
+            );
+            
+        case 'alternative2':
+            return (
+                <>
+                    <defs>
+                        <style>
+                            {`.cls-1,.cls-2{fill:#00f}.cls-4{fill:none;stroke:#00f;stroke-miterlimit:10}.cls-5,.cls-6{letter-spacing:0}.cls-2{font-size:20.11px;font-family:MyriadPro-Regular,"Myriad Pro"}`}
+                        </style>
+                    </defs>
+                    <circle cx="960" cy="540" r="200" className="cls-4"/>
+                    <text style={{fontSize:"32px", fontFamily:"MyriadPro-Regular, Myriad Pro", fill:"#00f"}} transform="translate(870 550)">
+                        <tspan x="0" y="0">Alternative View 2</tspan>
+                    </text>
+                </>
+            );
+            
+        case 'main':
+        default:
+            return (
+                <>
                 <defs>
                     <style>
                         {`.cls-1,.cls-2{fill:#00f}.cls-4{fill:none;stroke:#00f;stroke-miterlimit:10}.cls-5,.cls-6{letter-spacing:0}.cls-2{font-size:20.11px;font-family:MyriadPro-Regular,"Myriad Pro"}.cls-13,.cls-14,.cls-15{letter-spacing:0}.cls-19{letter-spacing:-.01em}.cls-23,.cls-25,.cls-26,.cls-28,.cls-30{letter-spacing:0}`}
@@ -109,9 +114,9 @@ const Diagram: React.FC<DiagramProps> = ({
                 <path d="M839.27 408.65h-12.59l6.3-20.94" className="cls-1"/>
                 <path d="M833.1 406.31c.02.41.03.81.03 1.22 0 14.5-11.75 26.25-26.25 26.25s-26.25-11.75-26.25-26.25 11.75-26.25 26.25-26.25h.63" className="cls-4"/>
                 <path d="M1362.22 263.97s27.28 97.2-67.69 97.2M1063.53 361.39s-119.22-3.57-141.85 65.14M387.94 683.56s-67.79-.08-77.66 71.98M301.46 806.03s-17.36 73.14 188.69 34.42M926.47 495.11s276.46-8.81 349.08 149.84M1282.25 749.96s-10.05 89.38-199.98 80.44M1320.08 749.96s44.84 90.49-36.94 155.67" className="cls-1"/>
-            </svg>
-        </div>
-    );
+                </>
+            );
+    }
 };
 
-export default Diagram;
+export default getDiagramContent;
