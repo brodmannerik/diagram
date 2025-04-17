@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Button, Flex } from "@radix-ui/themes";
-import DiagramContainer from "./Components/DiagramContainer";
-import { DiagramType } from "./Components/Diagram";
+import DiagramContainer, { DiagramType } from "./Components/DiagramContainer";
 
 type Language = "en" | "de";
 
@@ -9,19 +8,18 @@ function App() {
   const [diagramType, setDiagramType] = useState<DiagramType>("main");
   const [language, setLanguage] = useState<Language>("en");
 
-  console.log("App rendering with diagram type:", diagramType, "language:", language);
-
   const diagramLabels: Record<DiagramType, string> = {
     main: "Germanys Far Right",
-    alternative1: "Alternative View 1", 
-    alternative2: "Alternative View 2"
+    alternative1: "Alternative View 1",
+    alternative2: "Alternative View 2",
   };
 
   const languageLabels: Record<Language, string> = {
-    en: "Sprache",
-    de: "Language"
+    en: "Sprache", // Button shows German word when in English mode
+    de: "Language", // Button shows English word when in German mode
   };
 
+  // Cycle through diagram types when button is clicked
   const handleButtonClick = () => {
     if (diagramType === "main") {
       console.log("Changing to alternative1");
@@ -35,27 +33,29 @@ function App() {
     }
   };
 
+  // Toggle between languages
   const toggleLanguage = () => {
     console.log("Toggling language from", language);
-    setLanguage(prev => (prev === "en" ? "de" : "en"));
+    setLanguage((prev) => (prev === "en" ? "de" : "en"));
   };
 
   return (
     <>
-      <Flex 
-        width="100%" 
-        justify="between" 
-        py="4" 
+      <Flex
+        width="100%"
+        justify="between"
+        py="4"
         px="4"
         style={{
           position: "relative",
-          zIndex: 1000, 
+          zIndex: 1000,
         }}
       >
-        <Button 
-          size="4" 
-          onClick={handleButtonClick} 
-          style={{ 
+        {/* Main button - cycles through diagrams */}
+        <Button
+          size="4"
+          onClick={handleButtonClick}
+          style={{
             backgroundColor: "#0000FF",
             padding: "16px 32px",
             borderRadius: "17.495px",
@@ -68,10 +68,11 @@ function App() {
           {diagramLabels[diagramType]}
         </Button>
 
-        <Button 
-          size="4" 
+        {/* Language toggle button */}
+        <Button
+          size="4"
           onClick={toggleLanguage}
-          style={{ 
+          style={{
             backgroundColor: "#FFFFFF",
             padding: "16px 32px",
             borderRadius: "17.495px",
@@ -82,10 +83,11 @@ function App() {
             zIndex: 1000,
           }}
         >
-          {languageLabels[language]} {/* Show opposite language name */}
+          {languageLabels[language]}
         </Button>
       </Flex>
 
+      {/* Diagram display */}
       <DiagramContainer diagramType={diagramType} language={language} />
     </>
   );
