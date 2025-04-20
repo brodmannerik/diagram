@@ -40,37 +40,6 @@ interface CanvasData {
   edges: CanvasEdge[];
 }
 
-// Inline styles to avoid CSS conflicts
-const styles = {
-  canvasViewer: {
-    width: "100vw",
-    height: "100vh",
-    overflow: "hidden",
-    position: "relative" as const,
-    backgroundColor: "#f8f9fa",
-  },
-  canvasContent: {
-    position: "absolute" as const,
-    transformOrigin: "0 0",
-    willChange: "transform",
-  },
-  edge: {
-    stroke: "#FF0000",
-    strokeWidth: 3,
-    strokeOpacity: 0.8,
-  },
-  debugPanel: {
-    position: "absolute" as const,
-    top: "70px",
-    left: "20px",
-    background: "rgba(255,255,255,0.8)",
-    padding: "10px",
-    zIndex: 9999,
-    fontSize: "12px",
-    borderRadius: "4px",
-  },
-};
-
 function ResearchPage() {
   const navigate = useNavigate();
   const [canvasData, setCanvasData] = useState<CanvasData | null>(null);
@@ -452,16 +421,6 @@ function ResearchPage() {
     return canvasData.nodes.filter(isNodeVisible);
   }, [canvasData?.nodes, isNodeVisible]);
 
-  // Get visible edges based on visible nodes
-  const visibleEdges = useMemo(() => {
-    if (!canvasData?.edges || !canvasData?.nodes) return [];
-    const visibleNodeIds = new Set(visibleNodes.map((node) => node.id));
-    return canvasData.edges.filter(
-      (edge) =>
-        visibleNodeIds.has(edge.fromNode) && visibleNodeIds.has(edge.toNode)
-    );
-  }, [canvasData?.edges, visibleNodes]);
-
   // Format Obsidian wiki links to look like links
   const formatObsidianLinks = (text: string) => {
     return text.replace(/\[\[(.*?)\]\]/g, '<span class="wiki-link">$1</span>');
@@ -667,96 +626,12 @@ function ResearchPage() {
     }
   }, [canvasData]);
 
-  // 2. Replace the entire renderEdge function with this simplified version
-  const renderEdge = (edge: CanvasEdge) => {
-    if (!canvasData) return null;
-
-    const fromNode = canvasData.nodes.find((n) => n.id === edge.fromNode);
-    const toNode = canvasData.nodes.find((n) => n.id === edge.toNode);
-
-    if (!fromNode || !toNode) {
-      return null;
-    }
-
-    // Calculate center points of nodes for simpler rendering
-    const startX = fromNode.x + fromNode.width / 2;
-    const startY = fromNode.y + fromNode.height / 2;
-    const endX = toNode.x + toNode.width / 2;
-    const endY = toNode.y + toNode.height / 2;
-
-    return (
-      <svg
-        key={edge.id}
-        width="5000"
-        height="5000"
-        style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          zIndex: 9999, // Very high z-index to ensure visibility
-          pointerEvents: "none",
-        }}
-      >
-        {/* Super visible line for debugging */}
-        <line
-          x1={startX}
-          y1={startY}
-          x2={endX}
-          y2={endY}
-          stroke="#FF0000" // Bright red
-          strokeWidth={5}
-          strokeOpacity={1}
-          strokeDasharray="5,5" // Dashed line for better visibility
-        />
-
-        {/* Larger endpoint circle for debugging */}
-        <circle cx={endX} cy={endY} r={8} fill="#FF0000" />
-      </svg>
-    );
-  };
-
-  // 3. Replace the canvas-content section with this simplified structure
   useEffect(() => {
     // Prevent scale from being zero - which would cause division by zero
     if (scale <= 0.01) {
       setScale(0.01);
     }
   }, [scale]);
-
-  // Add this to your useEffect dependencies
-  const memoizedRenderEdges = useMemo(() => {
-    // This function will only recompute when scale, position, or canvasData changes
-    return (scale: number, position: { x: number; y: number }) => {
-      if (!canvasData?.edges) return null;
-
-      return canvasData.edges.map((edge) => {
-        const fromNode = canvasData.nodes.find((n) => n.id === edge.fromNode);
-        const toNode = canvasData.nodes.find((n) => n.id === edge.toNode);
-
-        if (!fromNode || !toNode) return null;
-
-        const fromX =
-          fromNode.x * scale + position.x + (fromNode.width * scale) / 2;
-        const fromY =
-          fromNode.y * scale + position.y + (fromNode.height * scale) / 2;
-        const toX = toNode.x * scale + position.x + (toNode.width * scale) / 2;
-        const toY = toNode.y * scale + position.y + (toNode.height * scale) / 2;
-
-        return (
-          <line
-            key={edge.id}
-            x1={fromX}
-            y1={fromY}
-            x2={toX}
-            y2={toY}
-            stroke="#0000FF"
-            strokeWidth={1.5}
-            strokeOpacity={0.6}
-          />
-        );
-      });
-    };
-  }, [canvasData]);
 
   // Add this function to draw edges
   const drawEdgesOnCanvas = useCallback(() => {

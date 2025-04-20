@@ -5,6 +5,7 @@ type DiagramProps = {
   language: string;
 };
 
+// @ts-ignore
 const Diagram: React.FC<DiagramProps> = ({ diagramType, language }) => {
   // Logic to determine which diagram to display based on diagramType
   const renderDiagram = () => {

@@ -34,6 +34,7 @@ function App() {
 function DiagramView() {
   const navigate = useNavigate();
   const [diagramType, setDiagramType] = useState<DiagramType>("main");
+  // @ts-ignore
   const [language, setLanguage] = useState<Language>("en");
   const [isColored, setIsColored] = useState<boolean>(false);
   // Hover information states
@@ -117,6 +118,7 @@ function DiagramView() {
     // Add event listeners to the SVG container
     const svgContainer = document.querySelector(".diagram-container");
     if (svgContainer) {
+      // @ts-ignore
       svgContainer.addEventListener("mouseover", handleMouseOver);
       svgContainer.addEventListener("mouseout", handleMouseOut);
     }
@@ -124,6 +126,8 @@ function DiagramView() {
     // Clean up event listeners on unmount or when dependencies change
     return () => {
       if (svgContainer) {
+        // @ts-ignore
+
         svgContainer.removeEventListener("mouseover", handleMouseOver);
         svgContainer.removeEventListener("mouseout", handleMouseOut);
       }

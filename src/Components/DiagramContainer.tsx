@@ -234,7 +234,7 @@ const DiagramContainer: React.FC<DiagramProps> = ({
             // Reduce stroke width in inline style
             styleAttr = styleAttr.replace(
               /stroke-width\s*:\s*([0-9.]+)([a-z%]*)/g,
-              (match, width, unit) => {
+              (width, unit) => {
                 const halfWidth = parseFloat(width) / 2;
                 return `stroke-width:${halfWidth}${unit}`;
               }
@@ -273,6 +273,7 @@ const DiagramContainer: React.FC<DiagramProps> = ({
           // Replace stroke-width in CSS
           cssText = cssText.replace(
             /stroke-width\s*:\s*([0-9.]+)([a-z%]*)/g,
+            // @ts-ignore
             (match, width, unit) => {
               const halfWidth = parseFloat(width) / 2;
               return `stroke-width:${halfWidth}${unit}`;
