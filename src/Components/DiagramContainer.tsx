@@ -39,7 +39,7 @@ const DiagramContainer: React.FC<DiagramProps> = ({
         const svgDoc = parser.parseFromString(text, "image/svg+xml");
         const svgElement = svgDoc.documentElement;
 
-        // Simply ensure the SVG is responsive and centered
+        // Ensure SVG is responsive and centered
         svgElement.setAttribute("width", "100%");
         svgElement.setAttribute("height", "100%");
         svgElement.setAttribute("preserveAspectRatio", "xMidYMid meet");
@@ -51,7 +51,66 @@ const DiagramContainer: React.FC<DiagramProps> = ({
           existingStyle + "; display: block; margin: 0 auto;"
         );
 
-        // Convert back to a string
+        // Reduce line thickness and maintain consistent stroke width
+        function processStrokeWidths(element: Element) {
+          // Process stroke-width attribute
+          if (element.hasAttribute("stroke-width")) {
+            const currentWidth = parseFloat(
+              element.getAttribute("stroke-width") || "1"
+            );
+            element.setAttribute("stroke-width", String(currentWidth / 2));
+
+            // Add vector-effect to ensure consistent stroke width
+            element.setAttribute("vector-effect", "non-scaling-stroke");
+          }
+
+          // Process stroke-width in style attribute
+          if (element.hasAttribute("style")) {
+            let styleAttr = element.getAttribute("style") || "";
+            styleAttr = styleAttr.replace(
+              /stroke-width\s*:\s*([0-9.]+)([a-z%]*)/g,
+              (match, width, unit) => {
+                const halfWidth = parseFloat(width) / 2;
+                return `stroke-width:${halfWidth}${unit}`;
+              }
+            );
+            element.setAttribute("style", styleAttr);
+          }
+
+          // If element has a stroke but no stroke-width, add a default half-thickness
+          if (
+            element.hasAttribute("stroke") &&
+            !element.hasAttribute("stroke-width")
+          ) {
+            element.setAttribute("stroke-width", "0.5"); // Default half thickness
+            element.setAttribute("vector-effect", "non-scaling-stroke");
+          }
+
+          // Process all child elements recursively
+          for (let i = 0; i < element.children.length; i++) {
+            processStrokeWidths(element.children[i]);
+          }
+        }
+
+        // Process CSS in style elements
+        const styleElements = svgDoc.querySelectorAll("style");
+        styleElements.forEach((style) => {
+          let cssText = style.textContent || "";
+          // Replace stroke-width in CSS
+          cssText = cssText.replace(
+            /stroke-width\s*:\s*([0-9.]+)([a-z%]*)/g,
+            (match, width, unit) => {
+              const halfWidth = parseFloat(width) / 2;
+              return `stroke-width:${halfWidth}${unit}; vector-effect:non-scaling-stroke`;
+            }
+          );
+          style.textContent = cssText;
+        });
+
+        // Start processing from the SVG root
+        processStrokeWidths(svgElement);
+
+        // Convert the modified SVG back to a string
         const serializer = new XMLSerializer();
         const modifiedSvgString = serializer.serializeToString(svgDoc);
 
