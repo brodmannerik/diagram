@@ -9,7 +9,6 @@ export interface DiagramProps {
   language?: Language;
 }
 
-// Simple container style that centers content
 const containerStyle = {
   width: "100%",
   height: "calc(100vh - 80px)",
@@ -39,7 +38,36 @@ const DiagramContainer: React.FC<DiagramProps> = ({
         const svgDoc = parser.parseFromString(text, "image/svg+xml");
         const svgElement = svgDoc.documentElement;
 
-        // Ensure SVG is responsive and centered
+        // Store original viewBox and dimensions
+        const originalViewBox = svgElement.getAttribute("viewBox");
+        const originalWidth = svgElement.getAttribute("width");
+        const originalHeight = svgElement.getAttribute("height");
+
+        // Ensure we have a viewBox (needed for non-scaling-stroke to work properly)
+        if (!originalViewBox && originalWidth && originalHeight) {
+          // If no viewBox but has width/height, create one
+          const width = parseFloat(originalWidth);
+          const height = parseFloat(originalHeight);
+          svgElement.setAttribute("viewBox", `0 0 ${width} ${height}`);
+        }
+
+        // The viewBox is critical for non-scaling-stroke to work properly
+        // Add custom CSS to enforce stroke width more aggressively
+        const styleElement = svgDoc.createElementNS(
+          "http://www.w3.org/2000/svg",
+          "style"
+        );
+        styleElement.textContent = `
+          * {
+            vector-effect: non-scaling-stroke !important;
+          }
+          path, line, polyline, rect, circle, ellipse, polygon {
+            vector-effect: non-scaling-stroke !important;
+          }
+        `;
+        svgElement.appendChild(styleElement);
+
+        // Set SVG to be responsive while preserving aspect ratio
         svgElement.setAttribute("width", "100%");
         svgElement.setAttribute("height", "100%");
         svgElement.setAttribute("preserveAspectRatio", "xMidYMid meet");
@@ -51,22 +79,41 @@ const DiagramContainer: React.FC<DiagramProps> = ({
           existingStyle + "; display: block; margin: 0 auto;"
         );
 
-        // Reduce line thickness and maintain consistent stroke width
+        // More aggressive stroke width processing
         function processStrokeWidths(element: Element) {
-          // Process stroke-width attribute
+          // Make sure all elements with strokes have vector-effect
+          if (
+            element.hasAttribute("stroke") ||
+            element.tagName.toLowerCase() === "path" ||
+            element.tagName.toLowerCase() === "line" ||
+            element.tagName.toLowerCase() === "polyline" ||
+            element.tagName.toLowerCase() === "rect" ||
+            element.tagName.toLowerCase() === "circle" ||
+            element.tagName.toLowerCase() === "ellipse" ||
+            element.tagName.toLowerCase() === "polygon"
+          ) {
+            // Set vector-effect regardless of whether stroke-width is set
+            element.setAttribute("vector-effect", "non-scaling-stroke");
+          }
+
+          // Process stroke-width attribute - reduce to half
           if (element.hasAttribute("stroke-width")) {
             const currentWidth = parseFloat(
               element.getAttribute("stroke-width") || "1"
             );
             element.setAttribute("stroke-width", String(currentWidth / 2));
-
-            // Add vector-effect to ensure consistent stroke width
-            element.setAttribute("vector-effect", "non-scaling-stroke");
           }
 
           // Process stroke-width in style attribute
           if (element.hasAttribute("style")) {
             let styleAttr = element.getAttribute("style") || "";
+
+            // Add vector-effect to inline style
+            if (!styleAttr.includes("vector-effect")) {
+              styleAttr += "; vector-effect: non-scaling-stroke";
+            }
+
+            // Reduce stroke width in inline style
             styleAttr = styleAttr.replace(
               /stroke-width\s*:\s*([0-9.]+)([a-z%]*)/g,
               (match, width, unit) => {
@@ -74,16 +121,25 @@ const DiagramContainer: React.FC<DiagramProps> = ({
                 return `stroke-width:${halfWidth}${unit}`;
               }
             );
+
             element.setAttribute("style", styleAttr);
           }
 
           // If element has a stroke but no stroke-width, add a default half-thickness
           if (
-            element.hasAttribute("stroke") &&
+            (element.hasAttribute("stroke") ||
+              [
+                "path",
+                "line",
+                "polyline",
+                "rect",
+                "circle",
+                "ellipse",
+                "polygon",
+              ].includes(element.tagName.toLowerCase())) &&
             !element.hasAttribute("stroke-width")
           ) {
             element.setAttribute("stroke-width", "0.5"); // Default half thickness
-            element.setAttribute("vector-effect", "non-scaling-stroke");
           }
 
           // Process all child elements recursively
@@ -101,9 +157,14 @@ const DiagramContainer: React.FC<DiagramProps> = ({
             /stroke-width\s*:\s*([0-9.]+)([a-z%]*)/g,
             (match, width, unit) => {
               const halfWidth = parseFloat(width) / 2;
-              return `stroke-width:${halfWidth}${unit}; vector-effect:non-scaling-stroke`;
+              return `stroke-width:${halfWidth}${unit}`;
             }
           );
+
+          // Add vector-effect to all relevant selectors
+          cssText +=
+            " path, line, polyline, rect, circle, ellipse, polygon { vector-effect: non-scaling-stroke !important; }";
+
           style.textContent = cssText;
         });
 
