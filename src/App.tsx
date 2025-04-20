@@ -8,6 +8,8 @@ type Language = "en" | "de";
 function App() {
   const [diagramType, setDiagramType] = useState<DiagramType>("main");
   const [language, setLanguage] = useState<Language>("en");
+  // Add color toggle state
+  const [isColored, setIsColored] = useState<boolean>(false);
 
   const diagramLabels: Record<DiagramType, string> = {
     main: "Germanys Far Right",
@@ -18,6 +20,12 @@ function App() {
   const languageLabels: Record<Language, string> = {
     en: "Sprache", // Button shows German word when in English mode
     de: "Language", // Button shows English word when in German mode
+  };
+
+  // Color button labels
+  const colorLabels = {
+    colored: "Black & White", // When colored, show option to switch to B&W
+    bw: "Colored", // When B&W, show option to switch to colored
   };
 
   // Handle paper button click
@@ -44,6 +52,12 @@ function App() {
   const toggleLanguage = () => {
     console.log("Toggling language from", language);
     setLanguage((prev) => (prev === "en" ? "de" : "en"));
+  };
+
+  // Color toggle function
+  const toggleColor = () => {
+    console.log("Toggling color");
+    setIsColored((prev) => !prev);
   };
 
   // Common button styling
@@ -89,8 +103,8 @@ function App() {
         </Button>
 
         {/* Language toggle button */}
-        <Button size="4" onClick={toggleLanguage} style={whiteButtonStyle}>
-          {languageLabels[language]}
+        <Button size="4" onClick={toggleColor} style={whiteButtonStyle}>
+          {isColored ? colorLabels.colored : colorLabels.bw}
         </Button>
       </Flex>
 
@@ -127,7 +141,11 @@ function App() {
       </div>
 
       {/* Diagram display */}
-      <DiagramContainer diagramType={diagramType} language={language} />
+      <DiagramContainer
+        diagramType={diagramType}
+        language={language}
+        isColored={isColored}
+      />
     </>
   );
 }

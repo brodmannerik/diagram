@@ -7,6 +7,7 @@ export interface DiagramProps {
   className?: string;
   diagramType?: DiagramType;
   language?: Language;
+  isColored?: boolean; // Add this prop
 }
 
 const containerStyle = {
@@ -24,16 +25,20 @@ const DiagramContainer: React.FC<DiagramProps> = ({
   className = "",
   diagramType = "main",
   language = "en",
+  isColored = false, // Add default value
 }) => {
   const [svgContent, setSvgContent] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // Fetch the new SVG file
-    fetch("/my-diagram.svg")
+    // ONLY CHANGE: Choose SVG file based on isColored prop
+    const svgFile = isColored ? "/my-diagram-color.svg" : "/my-diagram.svg";
+
+    // Fetch the new SVG file - changed to use dynamic file path
+    fetch(svgFile)
       .then((response) => response.text())
       .then((text) => {
-        // Parse the SVG content
+        // The rest of your code remains EXACTLY the same
         const parser = new DOMParser();
         const svgDoc = parser.parseFromString(text, "image/svg+xml");
         const svgElement = svgDoc.documentElement;
@@ -81,7 +86,7 @@ const DiagramContainer: React.FC<DiagramProps> = ({
 
         // More aggressive stroke width processing
         function processStrokeWidths(element: Element) {
-          // Make sure all elements with strokes have vector-effect
+          // All your existing stroke processing code
           if (
             element.hasAttribute("stroke") ||
             element.tagName.toLowerCase() === "path" ||
@@ -180,7 +185,7 @@ const DiagramContainer: React.FC<DiagramProps> = ({
       .catch((error) => {
         console.error("Error loading SVG:", error);
       });
-  }, []);
+  }, [diagramType, language, isColored]); // Add isColored to dependency array
 
   return (
     <div
