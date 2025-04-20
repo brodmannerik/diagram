@@ -9,6 +9,7 @@ export interface DiagramProps {
   language?: Language;
 }
 
+// Simple container style that centers content
 const containerStyle = {
   width: "100%",
   height: "calc(100vh - 80px)",
@@ -29,8 +30,8 @@ const DiagramContainer: React.FC<DiagramProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // Fetch the SVG file
-    fetch("/svg-for-web.svg")
+    // Fetch the new SVG file
+    fetch("/my-diagram.svg")
       .then((response) => response.text())
       .then((text) => {
         // Parse the SVG content
@@ -38,117 +39,22 @@ const DiagramContainer: React.FC<DiagramProps> = ({
         const svgDoc = parser.parseFromString(text, "image/svg+xml");
         const svgElement = svgDoc.documentElement;
 
-        // Make sure SVG has proper sizing attributes
+        // Simply ensure the SVG is responsive and centered
         svgElement.setAttribute("width", "100%");
         svgElement.setAttribute("height", "100%");
         svgElement.setAttribute("preserveAspectRatio", "xMidYMid meet");
 
-        // Find and modify all style elements in the SVG - more selective approach
-        const styleElements = svgDoc.querySelectorAll("style");
-        styleElements.forEach((style) => {
-          let cssText = style.textContent || "";
-          // Keep "none" values intact, only change actual colors
-          cssText = cssText.replace(
-            /fill:\s*#[0-9a-fA-F]{3,6}/g,
-            "fill: #0000FF"
-          );
-          cssText = cssText.replace(
-            /stroke:\s*#[0-9a-fA-F]{3,6}/g,
-            "stroke: #0000FF"
-          );
-          style.textContent = cssText;
-        });
+        // Add basic centering style
+        const existingStyle = svgElement.getAttribute("style") || "";
+        svgElement.setAttribute(
+          "style",
+          existingStyle + "; display: block; margin: 0 auto;"
+        );
 
-        // Process all elements with a more selective approach
-        function processElement(element: Element) {
-          // For fill attributes - only change if it's an actual color (not none/transparent)
-          if (
-            element.hasAttribute("fill") &&
-            element.getAttribute("fill") !== "none" &&
-            element.getAttribute("fill") !== "transparent" &&
-            element.getAttribute("fill")?.startsWith("#")
-          ) {
-            element.setAttribute("fill", "#0000FF");
-          }
-
-          // For stroke attributes - only change if it's an actual color
-          if (
-            element.hasAttribute("stroke") &&
-            element.getAttribute("stroke") !== "none" &&
-            element.getAttribute("stroke") !== "transparent" &&
-            element.getAttribute("stroke")?.startsWith("#")
-          ) {
-            element.setAttribute("stroke", "#0000FF");
-          }
-
-          // Handle style attribute - be selective about what we change
-          if (element.hasAttribute("style")) {
-            let styleAttr = element.getAttribute("style") || "";
-            // Only replace actual color values, not 'none' or other values
-            styleAttr = styleAttr.replace(
-              /fill:\s*#[0-9a-fA-F]{3,6}/g,
-              "fill: #0000FF"
-            );
-            styleAttr = styleAttr.replace(
-              /stroke:\s*#[0-9a-fA-F]{3,6}/g,
-              "stroke: #0000FF"
-            );
-            element.setAttribute("style", styleAttr);
-          }
-
-          // Element-specific handling
-          switch (element.tagName.toLowerCase()) {
-            case "text":
-              // For text, we typically want to change the fill (text color)
-              if (
-                !element.hasAttribute("fill") ||
-                element.getAttribute("fill") === "black"
-              ) {
-                element.setAttribute("fill", "#0000FF");
-              }
-              break;
-
-            case "path":
-            case "line":
-            case "polyline":
-              // For line elements, prioritize stroke over fill
-              if (
-                !element.hasAttribute("stroke") &&
-                !element.hasAttribute("fill")
-              ) {
-                element.setAttribute("stroke", "#0000FF");
-              }
-              break;
-
-            case "rect":
-            case "circle":
-            case "ellipse":
-            case "polygon":
-              // For shape elements, add blue stroke if no styling is present
-              if (
-                !element.hasAttribute("stroke") &&
-                !element.hasAttribute("fill")
-              ) {
-                element.setAttribute("stroke", "#0000FF");
-                element.setAttribute("fill", "none");
-              }
-              break;
-          }
-
-          // Process all child elements recursively
-          for (let i = 0; i < element.children.length; i++) {
-            processElement(element.children[i]);
-          }
-        }
-
-        // Start processing from the SVG root element
-        processElement(svgElement);
-
-        // Convert the modified SVG back to a string
+        // Convert back to a string
         const serializer = new XMLSerializer();
         const modifiedSvgString = serializer.serializeToString(svgDoc);
 
-        // Set the modified SVG content
         setSvgContent(modifiedSvgString);
       })
       .catch((error) => {
@@ -156,7 +62,6 @@ const DiagramContainer: React.FC<DiagramProps> = ({
       });
   }, []);
 
-  // Enhanced rendering with fallback
   return (
     <div
       className={`diagram-container ${className}`}
@@ -175,7 +80,7 @@ const DiagramContainer: React.FC<DiagramProps> = ({
           }}
         />
       ) : (
-        <div style={{ color: "#0000FF" }}>Loading diagram...</div>
+        <div>Loading diagram...</div>
       )}
     </div>
   );
