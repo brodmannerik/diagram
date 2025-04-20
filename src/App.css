@@ -1,0 +1,169 @@
+/* Canvas viewer styles */
+.canvas-viewer {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  position: relative;
+  background-color: #f8f9fa;
+}
+
+/* Increase the contrast for the canvas grid to help with spatial awareness */
+.canvas-grid {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-size: 40px 40px;
+  background-image: linear-gradient(
+      to right,
+      rgba(0, 0, 0, 0.05) 1px,
+      transparent 1px
+    ),
+    linear-gradient(to bottom, rgba(0, 0, 0, 0.05) 1px, transparent 1px);
+  z-index: 0;
+}
+
+.canvas-content {
+  position: absolute;
+  transform-origin: 0 0;
+  will-change: transform;
+}
+
+.canvas-node {
+  box-sizing: border-box;
+  line-height: 1.5;
+}
+
+.wiki-link {
+  color: #3182ce;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.text-content {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.node-content {
+  height: 100%;
+  overflow: auto;
+}
+
+.file-header,
+.link-header {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+.file-content-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: calc(100% - 30px);
+  overflow: hidden;
+}
+
+.canvas-image {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.image-placeholder,
+.file-placeholder {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  width: 100%;
+  color: #718096;
+  text-align: center;
+  gap: 10px;
+  padding: 10px;
+}
+
+.link-url {
+  color: #3182ce;
+  word-break: break-all;
+}
+
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(255, 255, 255, 0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 24px;
+  z-index: 1000;
+}
+
+.error-message {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: #fff;
+  color: #e53e3e;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  max-width: 80%;
+  text-align: center;
+  z-index: 1000;
+}
+
+/* Add these styles for better edge visibility */
+
+.edges-container {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.nodes-container {
+  position: relative;
+  z-index: 2;
+}
+
+/* Make sure SVG elements extend beyond their container if needed */
+svg {
+  overflow: visible;
+}
+
+/* Optional: add a subtle animation to make new connections more noticeable */
+@keyframes edgeFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.edges-container svg {
+  animation: edgeFadeIn 0.3s ease-in-out;
+}
+
+/* Responsive styles */
+@media (max-width: 768px) {
+  .zoom-controls,
+  .node-count-indicator {
+    padding: 4px !important;
+  }
+
+  .canvas-node {
+    font-size: 12px !important;
+  }
+}
