@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { Button, Flex } from "@radix-ui/themes";
+import { BrowserRouter, Routes, Route, useNavigate } from "react-router-dom";
 import DiagramContainer, { DiagramType } from "./Components/DiagramContainer";
+import ResearchPage from "./pages/ResearchPage";
 
 type Language = "en" | "de";
 
@@ -16,7 +18,21 @@ type HoverElementType =
 // Define a type for button hover tracking
 type ButtonHoverType = "paper" | "color" | "title" | "none";
 
+// Main App component that serves as the router
 function App() {
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<DiagramView />} />
+        <Route path="/research" element={<ResearchPage />} />
+      </Routes>
+    </BrowserRouter>
+  );
+}
+
+// DiagramView component (formerly the main App content)
+function DiagramView() {
+  const navigate = useNavigate();
   const [diagramType, setDiagramType] = useState<DiagramType>("main");
   const [language, setLanguage] = useState<Language>("en");
   const [isColored, setIsColored] = useState<boolean>(false);
@@ -30,20 +46,15 @@ function App() {
     alternative2: "Alternative View 2",
   };
 
-  const languageLabels: Record<Language, string> = {
-    en: "Sprache",
-    de: "Language",
-  };
-
   const colorLabels = {
     colored: "Blue",
     bw: "Colored",
   };
 
-  // Handle paper button click
+  // Handle paper button click - now navigates to research page
   const handlePaperClick = () => {
-    console.log("Paper button clicked");
-    // Add your functionality here
+    console.log("Navigating to research page");
+    navigate("/research");
   };
 
   // Cycle through diagram types when button is clicked
@@ -58,12 +69,6 @@ function App() {
       console.log("Changing to main");
       setDiagramType("main");
     }
-  };
-
-  // Toggle between languages
-  const toggleLanguage = () => {
-    console.log("Toggling language from", language);
-    setLanguage((prev) => (prev === "en" ? "de" : "en"));
   };
 
   // Color toggle function
@@ -248,7 +253,6 @@ function App() {
                 clipRule="evenodd"
               ></path>
             </svg>
-            {/* <span>Documents</span> */}
           </Flex>
         </Button>
       </div>
