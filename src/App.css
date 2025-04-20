@@ -156,6 +156,36 @@ svg {
   animation: edgeFadeIn 0.3s ease-in-out;
 }
 
+/* Critical edge rendering fixes */
+.edge-container {
+  position: absolute !important;
+  overflow: visible !important;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 5;
+  pointer-events: none;
+}
+
+.edge-container svg {
+  display: block !important;
+  overflow: visible !important;
+  position: absolute !important;
+}
+
+/* Make edges stand out */
+.edge-container line {
+  stroke-width: 2px;
+  stroke: #0000ff;
+  stroke-opacity: 0.7;
+}
+
+.edge-container polygon {
+  fill: #0000ff;
+  fill-opacity: 0.7;
+}
+
 /* Responsive styles */
 @media (max-width: 768px) {
   .zoom-controls,

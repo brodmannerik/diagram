@@ -755,6 +755,48 @@ function ResearchPage() {
   };
 
   // 3. Replace the canvas-content section with this simplified structure
+  useEffect(() => {
+    // Prevent scale from being zero - which would cause division by zero
+    if (scale <= 0.01) {
+      setScale(0.01);
+    }
+  }, [scale]);
+
+  // Add this to your useEffect dependencies
+  const memoizedRenderEdges = useMemo(() => {
+    // This function will only recompute when scale, position, or canvasData changes
+    return (scale: number, position: { x: number; y: number }) => {
+      if (!canvasData?.edges) return null;
+
+      return canvasData.edges.map((edge) => {
+        const fromNode = canvasData.nodes.find((n) => n.id === edge.fromNode);
+        const toNode = canvasData.nodes.find((n) => n.id === edge.toNode);
+
+        if (!fromNode || !toNode) return null;
+
+        const fromX =
+          fromNode.x * scale + position.x + (fromNode.width * scale) / 2;
+        const fromY =
+          fromNode.y * scale + position.y + (fromNode.height * scale) / 2;
+        const toX = toNode.x * scale + position.x + (toNode.width * scale) / 2;
+        const toY = toNode.y * scale + position.y + (toNode.height * scale) / 2;
+
+        return (
+          <line
+            key={edge.id}
+            x1={fromX}
+            y1={fromY}
+            x2={toX}
+            y2={toY}
+            stroke="#0000FF"
+            strokeWidth={1.5}
+            strokeOpacity={0.6}
+          />
+        );
+      });
+    };
+  }, [canvasData]);
+
   return (
     <div style={{ height: "100vh", width: "100vw", position: "relative" }}>
       {/* Top left button (same as main page) */}
@@ -816,6 +858,21 @@ function ResearchPage() {
           >
             <div className="canvas-grid"></div>
 
+            <svg
+              style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                width: "100%",
+                height: "100%",
+                zIndex: 50, // Lower z-index to appear behind nodes
+                pointerEvents: "none",
+              }}
+            >
+              {/* Only render when we have data */}
+              {memoizedRenderEdges(scale, position)}
+            </svg>
+
             <div
               className="canvas-content"
               style={{
@@ -826,75 +883,7 @@ function ResearchPage() {
                 transformOrigin: "0 0",
               }}
             >
-              {/* First make sure we're seeing debug info */}
-              <div
-                style={{
-                  position: "absolute",
-                  top: -70,
-                  left: -20,
-                  zIndex: 10000,
-                  background: "rgba(255,255,255,0.9)",
-                  padding: "4px",
-                  fontSize: "12px",
-                  borderRadius: "4px",
-                  pointerEvents: "none",
-                }}
-              >
-                Edge count: {visibleEdges.length}
-              </div>
-
-              {/* Super visible edge layer */}
-              {visibleEdges.map((edge) => {
-                if (!canvasData) return null;
-
-                const fromNode = canvasData.nodes.find(
-                  (n) => n.id === edge.fromNode
-                );
-                const toNode = canvasData.nodes.find(
-                  (n) => n.id === edge.toNode
-                );
-
-                if (!fromNode || !toNode) return null;
-
-                // Calculate center points of nodes for simpler rendering
-                const startX = fromNode.x + fromNode.width / 2;
-                const startY = fromNode.y + fromNode.height / 2;
-                const endX = toNode.x + toNode.width / 2;
-                const endY = toNode.y + toNode.height / 2;
-
-                return (
-                  <svg
-                    key={edge.id}
-                    style={{
-                      position: "absolute",
-                      top: 0,
-                      left: 0,
-                      width: "100%",
-                      height: "100%",
-                      zIndex: 100,
-                      pointerEvents: "none",
-                      overflow: "visible",
-                    }}
-                  >
-                    {/* Super visible line */}
-                    <line
-                      x1={startX}
-                      y1={startY}
-                      x2={endX}
-                      y2={endY}
-                      stroke="#FF0000"
-                      strokeWidth={3}
-                      strokeOpacity={1}
-                    />
-
-                    {/* Endpoint markers for visibility */}
-                    <circle cx={startX} cy={startY} r={4} fill="#0000FF" />
-                    <circle cx={endX} cy={endY} r={4} fill="#00FF00" />
-                  </svg>
-                );
-              })}
-
-              {/* Nodes rendered on top of edges */}
+              {/* Only nodes in this container */}
               {visibleNodes.map(renderNode)}
             </div>
 
