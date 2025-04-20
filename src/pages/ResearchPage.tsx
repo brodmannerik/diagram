@@ -83,6 +83,7 @@ function ResearchPage() {
   const [nodeCount, setNodeCount] = useState(0);
   const [edgeCount, setEdgeCount] = useState(0);
   const canvasRef = useRef<HTMLDivElement>(null);
+  const canvasEdgesRef = useRef<HTMLCanvasElement>(null);
 
   const lastTouchRef = useRef<{ x: number; y: number } | null>(null);
   const transformRef = useRef({ scale: 1, x: 0, y: 0 });
@@ -241,60 +242,17 @@ function ResearchPage() {
     setDragging(false);
   }, []);
 
-  // Wheel handler for zooming
-  const handleWheel = useCallback(
-    (e: WheelEvent) => {
-      if ((e.target as HTMLElement).closest(".canvas-node")) {
-        return;
-      }
+  // Replace the handleWheel function with this version that only prevents default scrolling
+  const handleWheel = useCallback((e: WheelEvent) => {
+    // Only prevent default browser scrolling behavior
+    // but don't do any zooming with the wheel
+    if ((e.target as HTMLElement).closest(".canvas-node")) {
+      return; // Allow scrolling inside nodes
+    }
 
-      e.preventDefault();
-
-      // Get current transform values
-      const {
-        scale: currentScale,
-        x: currentX,
-        y: currentY,
-      } = transformRef.current;
-
-      // Calculate viewport center
-      const viewportWidth = canvasRef.current?.clientWidth || 0;
-      const viewportHeight = canvasRef.current?.clientHeight || 0;
-      const viewportCenterX = (viewportWidth / 2 - currentX) / currentScale;
-      const viewportCenterY = (viewportHeight / 2 - currentY) / currentScale;
-
-      // Calculate smoother delta
-      let delta = e.deltaMode === 1 ? e.deltaY * -0.01 : e.deltaY * -0.0003;
-      delta = Math.min(Math.max(delta, -0.08), 0.08); // Limit change size
-
-      // Calculate new scale
-      const newScale = Math.min(Math.max(currentScale * (1 + delta), 0.1), 5);
-      const scaleFactor = newScale / currentScale;
-
-      // Calculate new position
-      const newX =
-        currentX - viewportCenterX * (scaleFactor - 1) * currentScale;
-      const newY =
-        currentY - viewportCenterY * (scaleFactor - 1) * currentScale;
-
-      // Update the ref immediately
-      transformRef.current = { scale: newScale, x: newX, y: newY };
-
-      // Apply direct DOM updates for immediate feedback
-      if (canvasRef.current) {
-        const content = canvasRef.current.querySelector(
-          ".canvas-content"
-        ) as HTMLElement;
-        if (content) {
-          content.style.transform = `translate(${newX}px, ${newY}px) scale(${newScale})`;
-        }
-      }
-
-      // Update React state in a debounced way
-      debouncedStateUpdate(newScale, { x: newX, y: newY });
-    },
-    [debouncedStateUpdate]
-  );
+    e.preventDefault(); // Prevent page scrolling
+    // Remove all the zooming logic
+  }, []);
 
   // Zoom button handlers
   const handleZoomIn = useCallback(() => {
@@ -510,8 +468,9 @@ function ResearchPage() {
   };
 
   // Render individual node
-  const renderNode = (node: CanvasNode) => {
-    const style = {
+  const renderNode = (node: CanvasNode & { style?: React.CSSProperties }) => {
+    // Use provided style or build default style
+    const style = node.style || {
       position: "absolute" as const,
       left: `${node.x}px`,
       top: `${node.y}px`,
@@ -532,8 +491,10 @@ function ResearchPage() {
       userSelect: "text",
       cursor: "default",
       maxHeight: `${node.height}px`,
+      zIndex: 10, // Default z-index for nodes
     };
 
+    // Rest of the function remains the same
     const handleNodeInteraction = (e: React.MouseEvent | React.TouchEvent) => {
       e.stopPropagation();
     };
@@ -797,6 +758,64 @@ function ResearchPage() {
     };
   }, [canvasData]);
 
+  // Add this function to draw edges
+  const drawEdgesOnCanvas = useCallback(() => {
+    if (!canvasData?.edges || !canvasEdgesRef.current) return;
+
+    const canvas = canvasEdgesRef.current;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    // Clear previous drawings
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Set canvas dimensions to match viewport
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    // Set line style
+    ctx.strokeStyle = "#0000FF";
+    ctx.lineWidth = 1.5;
+    ctx.globalAlpha = 0.5;
+
+    // Draw all edges
+    canvasData.edges.forEach((edge) => {
+      const fromNode = canvasData.nodes.find((n) => n.id === edge.fromNode);
+      const toNode = canvasData.nodes.find((n) => n.id === edge.toNode);
+
+      if (!fromNode || !toNode) return;
+
+      // Calculate positions with transform
+      const fromX =
+        fromNode.x * scale + position.x + (fromNode.width * scale) / 2;
+      const fromY =
+        fromNode.y * scale + position.y + (fromNode.height * scale) / 2;
+      const toX = toNode.x * scale + position.x + (toNode.width * scale) / 2;
+      const toY = toNode.y * scale + position.y + (toNode.height * scale) / 2;
+
+      // Draw line
+      ctx.beginPath();
+      ctx.moveTo(fromX, fromY);
+      ctx.lineTo(toX, toY);
+      ctx.stroke();
+    });
+  }, [canvasData, scale, position]);
+
+  // Update canvas whenever transform changes
+  useEffect(() => {
+    drawEdgesOnCanvas();
+  }, [drawEdgesOnCanvas, scale, position]);
+
+  // Also update on resize
+  useEffect(() => {
+    function handleResize() {
+      drawEdgesOnCanvas();
+    }
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, [drawEdgesOnCanvas]);
+
   return (
     <div style={{ height: "100vh", width: "100vw", position: "relative" }}>
       {/* Top left button (same as main page) */}
@@ -858,21 +877,21 @@ function ResearchPage() {
           >
             <div className="canvas-grid"></div>
 
-            <svg
+            {/* Canvas for edges - always below nodes */}
+            <canvas
+              ref={canvasEdgesRef}
               style={{
                 position: "absolute",
                 top: 0,
                 left: 0,
                 width: "100%",
                 height: "100%",
-                zIndex: 50, // Lower z-index to appear behind nodes
+                zIndex: 5,
                 pointerEvents: "none",
               }}
-            >
-              {/* Only render when we have data */}
-              {memoizedRenderEdges(scale, position)}
-            </svg>
+            />
 
+            {/* Regular content with nodes */}
             <div
               className="canvas-content"
               style={{
@@ -881,13 +900,13 @@ function ResearchPage() {
                 left: 0,
                 transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`,
                 transformOrigin: "0 0",
+                zIndex: 10, // Higher than canvas
               }}
             >
-              {/* Only nodes in this container */}
-              {visibleNodes.map(renderNode)}
+              {visibleNodes.map((node) => renderNode(node))}
             </div>
 
-            {/* Restore zoom controls */}
+            {/* RESTORED: Zoom controls */}
             <div
               className="zoom-controls"
               style={{
@@ -938,7 +957,7 @@ function ResearchPage() {
               </Flex>
             </div>
 
-            {/* Restore node/edge counter */}
+            {/* RESTORED: Node count indicator */}
             <div
               className="node-count-indicator"
               style={{
