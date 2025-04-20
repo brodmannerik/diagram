@@ -4,8 +4,14 @@ import DiagramContainer, { DiagramType } from "./Components/DiagramContainer";
 
 type Language = "en" | "de";
 
-// Define element types for hover information
-type HoverElementType = "variable" | "flow" | "condition" | "process" | "none";
+// Updated element types to include connection
+type HoverElementType =
+  | "variable"
+  | "flow"
+  | "connection"
+  | "condition"
+  | "process"
+  | "none";
 
 // Define a type for button hover tracking
 type ButtonHoverType = "paper" | "color" | "title" | "none";
@@ -30,7 +36,7 @@ function App() {
   };
 
   const colorLabels = {
-    colored: "Black & White",
+    colored: "Blue",
     bw: "Colored",
   };
 
@@ -73,6 +79,7 @@ function App() {
       // Only process SVG element hovers when no button is being hovered
       if (buttonHover === "none") {
         const target = e.target as Element;
+        console.log("Hovered element:", target);
 
         // Determine what type of element was hovered
         if (
@@ -80,14 +87,9 @@ function App() {
           target.classList.contains("variable")
         ) {
           setHoverElement("variable");
-        } else if (
-          target.tagName === "path" &&
-          (target.getAttribute("stroke-dasharray") ||
-            target.classList.contains("flow"))
-        ) {
-          setHoverElement("flow");
         } else if (target.tagName === "path" || target.tagName === "line") {
-          setHoverElement("flow");
+          // All paths and lines are now just "connection" - no more flow detection
+          setHoverElement("connection");
         } else if (
           target.tagName === "diamond" ||
           target.classList.contains("condition")
@@ -165,6 +167,8 @@ function App() {
         return "Variable";
       case "flow":
         return "Flow";
+      case "connection":
+        return "Connection";
       case "condition":
         return "Condition";
       case "process":
