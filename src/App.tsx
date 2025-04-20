@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { Button, Flex } from "@radix-ui/themes";
-import { FileIcon } from "@radix-ui/react-icons";
 import DiagramContainer, { DiagramType } from "./Components/DiagramContainer";
 
 type Language = "en" | "de";

@@ -7,7 +7,7 @@ export interface DiagramProps {
   className?: string;
   diagramType?: DiagramType;
   language?: Language;
-  isColored?: boolean; // Add this prop
+  isColored?: boolean; // This prop now controls color conversion
 }
 
 const containerStyle = {
@@ -25,20 +25,18 @@ const DiagramContainer: React.FC<DiagramProps> = ({
   className = "",
   diagramType = "main",
   language = "en",
-  isColored = false, // Add default value
+  isColored = false, // Default to non-colored (convert to blue)
 }) => {
   const [svgContent, setSvgContent] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // ONLY CHANGE: Choose SVG file based on isColored prop
-    const svgFile = isColored ? "/my-diagram-color.svg" : "/my-diagram.svg";
+    // Always use the colored SVG
+    const svgFile = "/my-diagram-color.svg";
 
-    // Fetch the new SVG file - changed to use dynamic file path
     fetch(svgFile)
       .then((response) => response.text())
       .then((text) => {
-        // The rest of your code remains EXACTLY the same
         const parser = new DOMParser();
         const svgDoc = parser.parseFromString(text, "image/svg+xml");
         const svgElement = svgDoc.documentElement;
@@ -54,6 +52,122 @@ const DiagramContainer: React.FC<DiagramProps> = ({
           const width = parseFloat(originalWidth);
           const height = parseFloat(originalHeight);
           svgElement.setAttribute("viewBox", `0 0 ${width} ${height}`);
+        }
+
+        // If not in colored mode, convert non-blue and non-black colors to blue
+        if (!isColored) {
+          // Process color attributes in SVG elements
+          function processColors(element: Element) {
+            // Process fill attributes
+            if (element.hasAttribute("fill")) {
+              const fill = element.getAttribute("fill");
+              // Only change non-blue, non-black, and non-none fills
+              if (
+                fill !== "#0000FF" &&
+                fill !== "blue" &&
+                fill !== "#000000" &&
+                fill !== "black" &&
+                fill !== "none" &&
+                fill !== "transparent"
+              ) {
+                element.setAttribute("fill", "#0000FF");
+              }
+            }
+
+            // Process stroke attributes
+            if (element.hasAttribute("stroke")) {
+              const stroke = element.getAttribute("stroke");
+              // Only change non-blue, non-black, and non-none strokes
+              if (
+                stroke !== "#0000FF" &&
+                stroke !== "blue" &&
+                stroke !== "#000000" &&
+                stroke !== "black" &&
+                stroke !== "none" &&
+                stroke !== "transparent"
+              ) {
+                element.setAttribute("stroke", "#0000FF");
+              }
+            }
+
+            // Process style attributes
+            if (element.hasAttribute("style")) {
+              let styleAttr = element.getAttribute("style") || "";
+
+              // Process fill in style attribute
+              styleAttr = styleAttr.replace(
+                /fill\s*:\s*([^;]+)/g,
+                (match, color) => {
+                  // Keep blue, black, none, and transparent colors
+                  if (
+                    color.includes("blue") ||
+                    color.includes("#0000FF") ||
+                    color.includes("black") ||
+                    color.includes("#000000") ||
+                    color.includes("none") ||
+                    color.includes("transparent")
+                  ) {
+                    return match;
+                  }
+                  return "fill: #0000FF";
+                }
+              );
+
+              // Process stroke in style attribute
+              styleAttr = styleAttr.replace(
+                /stroke\s*:\s*([^;]+)/g,
+                (match, color) => {
+                  // Keep blue, black, none, and transparent colors
+                  if (
+                    color.includes("blue") ||
+                    color.includes("#0000FF") ||
+                    color.includes("black") ||
+                    color.includes("#000000") ||
+                    color.includes("none") ||
+                    color.includes("transparent")
+                  ) {
+                    return match;
+                  }
+                  return "stroke: #0000FF";
+                }
+              );
+
+              element.setAttribute("style", styleAttr);
+            }
+
+            // Process all child elements recursively
+            for (let i = 0; i < element.children.length; i++) {
+              processColors(element.children[i]);
+            }
+          }
+
+          // Process CSS in style elements
+          const styleElements = svgDoc.querySelectorAll("style");
+          styleElements.forEach((style) => {
+            let cssText = style.textContent || "";
+
+            // Replace all colors except blue, black, none, and transparent
+            // This regex is more complex to avoid capturing blue and black
+            cssText = cssText.replace(
+              /([^-])color\s*:\s*(?!blue|#0000FF|black|#000000|none|transparent)([^;]+)/g,
+              "$1color: #0000FF"
+            );
+
+            cssText = cssText.replace(
+              /([^-])fill\s*:\s*(?!blue|#0000FF|black|#000000|none|transparent)([^;]+)/g,
+              "$1fill: #0000FF"
+            );
+
+            cssText = cssText.replace(
+              /([^-])stroke\s*:\s*(?!blue|#0000FF|black|#000000|none|transparent)([^;]+)/g,
+              "$1stroke: #0000FF"
+            );
+
+            style.textContent = cssText;
+          });
+
+          // Process all elements starting from the root
+          processColors(svgElement);
         }
 
         // The viewBox is critical for non-scaling-stroke to work properly
@@ -84,9 +198,9 @@ const DiagramContainer: React.FC<DiagramProps> = ({
           existingStyle + "; display: block; margin: 0 auto;"
         );
 
-        // More aggressive stroke width processing
+        // Apply your existing stroke processing code
         function processStrokeWidths(element: Element) {
-          // All your existing stroke processing code
+          // Make sure all elements with strokes have vector-effect
           if (
             element.hasAttribute("stroke") ||
             element.tagName.toLowerCase() === "path" ||
@@ -97,7 +211,6 @@ const DiagramContainer: React.FC<DiagramProps> = ({
             element.tagName.toLowerCase() === "ellipse" ||
             element.tagName.toLowerCase() === "polygon"
           ) {
-            // Set vector-effect regardless of whether stroke-width is set
             element.setAttribute("vector-effect", "non-scaling-stroke");
           }
 
@@ -153,9 +266,9 @@ const DiagramContainer: React.FC<DiagramProps> = ({
           }
         }
 
-        // Process CSS in style elements
-        const styleElements = svgDoc.querySelectorAll("style");
-        styleElements.forEach((style) => {
+        // Process CSS in style elements for stroke width
+        const existingStyleElements = svgDoc.querySelectorAll("style");
+        existingStyleElements.forEach((style) => {
           let cssText = style.textContent || "";
           // Replace stroke-width in CSS
           cssText = cssText.replace(
@@ -165,10 +278,6 @@ const DiagramContainer: React.FC<DiagramProps> = ({
               return `stroke-width:${halfWidth}${unit}`;
             }
           );
-
-          // Add vector-effect to all relevant selectors
-          cssText +=
-            " path, line, polyline, rect, circle, ellipse, polygon { vector-effect: non-scaling-stroke !important; }";
 
           style.textContent = cssText;
         });
@@ -185,7 +294,7 @@ const DiagramContainer: React.FC<DiagramProps> = ({
       .catch((error) => {
         console.error("Error loading SVG:", error);
       });
-  }, [diagramType, language, isColored]); // Add isColored to dependency array
+  }, [diagramType, language, isColored]);
 
   return (
     <div
