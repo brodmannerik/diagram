@@ -11,7 +11,6 @@ import {
 import { debounce, throttle } from "lodash";
 import "../App.css";
 
-// Define interfaces for the canvas data
 interface CanvasNode {
   id: string;
   type: string;
@@ -99,7 +98,6 @@ function ResearchPage() {
   const getImagePath = (obsidianPath: string | undefined): string => {
     if (!obsidianPath) return "";
 
-    // Extract just the filename from the path (everything after the last slash)
     const filename = obsidianPath.split("/").pop();
 
     if (!filename) return "";
@@ -108,13 +106,11 @@ function ResearchPage() {
     return `/images/${filename}`;
   };
 
-  // Load canvas from public directory
   useEffect(() => {
     const loadCanvasFromPublic = async () => {
       try {
         setLoading(true);
 
-        // Fetch the canvas file from public directory
         const response = await fetch("/canvas/Beliefs.canvas");
         if (!response.ok) {
           throw new Error(`Failed to load canvas file: ${response.statusText}`);
@@ -142,7 +138,7 @@ function ResearchPage() {
   useEffect(() => {
     function handleResize() {
       if (window.innerWidth < 768) {
-        setScale((prev) => Math.max(prev, 0.5)); // Ensure minimum scale on mobile
+        setScale((prev) => Math.max(prev, 0.5));
       }
     }
 
@@ -152,7 +148,6 @@ function ResearchPage() {
   }, []);
 
   useEffect(() => {
-    // Mobile-specific optimizations
     if (window.innerWidth < 768) {
       setScale(0.5);
     }
@@ -161,7 +156,6 @@ function ResearchPage() {
   const centerCanvas = (data: CanvasData) => {
     if (!data.nodes.length || !canvasRef.current) return;
 
-    // Find the bounding box of all nodes
     const minX = Math.min(...data.nodes.map((n) => n.x));
     const maxX = Math.max(...data.nodes.map((n) => n.x + n.width));
     const minY = Math.min(...data.nodes.map((n) => n.y));
@@ -170,30 +164,25 @@ function ResearchPage() {
     const canvasWidth = canvasRef.current.clientWidth;
     const canvasHeight = canvasRef.current.clientHeight;
 
-    // Calculate center position
     const centerX = canvasWidth / 2 - (minX + maxX) / 2;
     const centerY = canvasHeight / 2 - (minY + maxY) / 2;
 
-    // Apply the centering position
     setPosition({ x: centerX, y: centerY });
 
-    // Reset scale to ensure everything is visible
     setScale(0.8);
   };
 
-  // Mouse interaction handlers
   const handleMouseDown = (e: React.MouseEvent) => {
-    if (e.button !== 0) return; // Only left mouse button
+    if (e.button !== 0) return;
     setDragging(true);
     setDragStart({ x: e.clientX, y: e.clientY });
-    e.preventDefault(); // Prevent text selection during drag
+    e.preventDefault();
   };
 
   const handleMouseMove = useCallback(
     (e: MouseEvent) => {
       if (!dragging) return;
 
-      // Calculate position change
       const dx = e.clientX - dragStart.x;
       const dy = e.clientY - dragStart.y;
 
@@ -211,19 +200,14 @@ function ResearchPage() {
     setDragging(false);
   }, []);
 
-  // Replace the handleWheel function with this version that only prevents default scrolling
   const handleWheel = useCallback((e: WheelEvent) => {
-    // Only prevent default browser scrolling behavior
-    // but don't do any zooming with the wheel
     if ((e.target as HTMLElement).closest(".canvas-node")) {
-      return; // Allow scrolling inside nodes
+      return;
     }
 
-    e.preventDefault(); // Prevent page scrolling
-    // Remove all the zooming logic
+    e.preventDefault();
   }, []);
 
-  // Zoom button handlers
   const handleZoomIn = useCallback(() => {
     const {
       scale: currentScale,
@@ -290,7 +274,6 @@ function ResearchPage() {
     setPosition({ x: newX, y: newY });
   }, []);
 
-  // Add event listeners for mouse wheel
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -302,7 +285,6 @@ function ResearchPage() {
     };
   }, [handleWheel]);
 
-  // Add mouse event listeners
   useEffect(() => {
     if (dragging) {
       window.addEventListener("mousemove", handleMouseMove);
@@ -318,7 +300,6 @@ function ResearchPage() {
     };
   }, [dragging, handleMouseMove, handleMouseUp]);
 
-  // Touch handlers for mobile
   const handleTouchStart = useCallback((e: TouchEvent) => {
     e.preventDefault();
 
@@ -357,7 +338,6 @@ function ResearchPage() {
     lastTouchRef.current = null;
   }, []);
 
-  // Add touch event listeners
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -375,9 +355,19 @@ function ResearchPage() {
     };
   }, [handleWheel, handleTouchStart, handleTouchMove, handleTouchEnd]);
 
-  // Get color for node based on type
   const getNodeColor = (node: CanvasNode) => {
-    if (node.color) return node.color;
+    if (node.color) {
+      if (node.color === "#000000") {
+        node.color = "#ADADAD";
+      } else if (node.color === "1") {
+        node.color = "#EB0F0F";
+      } else if (node.color === "4") {
+        node.color = "#09EC18";
+      } else if (node.color === "5") {
+        node.color = "#14FFEF";
+      }
+      return node.color;
+    }
 
     switch (node.type) {
       case "text":
@@ -391,7 +381,6 @@ function ResearchPage() {
     }
   };
 
-  // Determine if a node is visible in the viewport
   const isNodeVisible = useCallback(
     (node: CanvasNode) => {
       if (!canvasRef.current) return false;
@@ -415,20 +404,17 @@ function ResearchPage() {
     [position, scale]
   );
 
-  // Get visible nodes based on viewport
   const visibleNodes = useMemo(() => {
     if (!canvasData?.nodes) return [];
     return canvasData.nodes.filter(isNodeVisible);
   }, [canvasData?.nodes, isNodeVisible]);
 
-  // Format Obsidian wiki links to look like links
   const formatObsidianLinks = (text: string) => {
     return text.replace(/\[\[(.*?)\]\]/g, '<span class="wiki-link">$1</span>');
   };
 
   // Render individual node
   const renderNode = (node: CanvasNode & { style?: React.CSSProperties }) => {
-    // Use provided style or build default style
     const style = node.style || {
       position: "absolute" as const,
       left: `${node.x}px`,

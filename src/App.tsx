@@ -6,7 +6,6 @@ import ResearchPage from "./pages/ResearchPage";
 
 type Language = "en" | "de";
 
-// Updated element types to include connection
 type HoverElementType =
   | "variable"
   | "flow"
@@ -15,10 +14,8 @@ type HoverElementType =
   | "process"
   | "none";
 
-// Define a type for button hover tracking
 type ButtonHoverType = "paper" | "color" | "title" | "none";
 
-// Main App component that serves as the router
 function App() {
   return (
     <BrowserRouter>
@@ -58,7 +55,6 @@ function DiagramView() {
     navigate("/research");
   };
 
-  // Cycle through diagram types when button is clicked
   const handleButtonClick = () => {
     if (diagramType === "main") {
       console.log("Changing to alternative1");
@@ -72,7 +68,6 @@ function DiagramView() {
     }
   };
 
-  // Color toggle function
   const toggleColor = () => {
     console.log("Toggling color");
     setIsColored((prev) => !prev);
@@ -87,14 +82,12 @@ function DiagramView() {
         const target = e.target as Element;
         console.log("Hovered element:", target);
 
-        // Determine what type of element was hovered
         if (
           target.tagName === "rect" ||
           target.classList.contains("variable")
         ) {
           setHoverElement("variable");
         } else if (target.tagName === "path" || target.tagName === "line") {
-          // All paths and lines are now just "connection" - no more flow detection
           setHoverElement("connection");
         } else if (
           target.tagName === "diamond" ||
@@ -109,7 +102,6 @@ function DiagramView() {
 
     // Function to handle mouse out events
     const handleMouseOut = () => {
-      // Only clear element hover when no button is hovered
       if (buttonHover === "none") {
         setHoverElement("none");
       }
@@ -127,14 +119,12 @@ function DiagramView() {
     return () => {
       if (svgContainer) {
         // @ts-ignore
-
         svgContainer.removeEventListener("mouseover", handleMouseOver);
         svgContainer.removeEventListener("mouseout", handleMouseOut);
       }
     };
-  }, [isColored, buttonHover]); // Re-run when color toggle or button hover changes
+  }, [isColored, buttonHover]);
 
-  // Common button styling
   const buttonStyle = {
     padding: "16px 32px",
     borderRadius: "17.495px",
@@ -144,13 +134,11 @@ function DiagramView() {
     cursor: "pointer",
   };
 
-  // Blue button style
   const blueButtonStyle = {
     ...buttonStyle,
     backgroundColor: "#0000FF",
   };
 
-  // White button style
   const whiteButtonStyle = {
     ...buttonStyle,
     backgroundColor: "#FFFFFF",
@@ -160,16 +148,13 @@ function DiagramView() {
 
   // Helper function to get info text based on hover state
   const getInfoText = (): string => {
-    // Button hover takes precedence
     if (buttonHover === "paper") return "Open Research";
     if (buttonHover === "color") return "Show Color";
     if (buttonHover === "title") return "Switch Diagram";
 
-    // If no button is hovered, show element info
     return getElementDescription(hoverElement);
   };
 
-  // Helper function to get element description
   const getElementDescription = (type: HoverElementType): string => {
     switch (type) {
       case "variable":
