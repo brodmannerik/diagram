@@ -46,7 +46,7 @@ a {
 }
 
 svg text {
-  font-weight: 300 !important; /* Lighter font weight */
+  font-weight: 200 !important; /* Lighter font weight */
   /* Keeping the original font family */
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -55,6 +55,6 @@ svg text {
 
 /* For specific SVG text elements with Times New Roman */
 svg text[font-family="Times New Roman"] {
-  font-weight: 300 !important; /* Lighter weight */
+  font-weight: 200 !important; /* Lighter weight */
   stroke-width: 0.5 !important; /* Thinner stroke if applicable */
 }
