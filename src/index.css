@@ -9,13 +9,15 @@
   scroll-behavior: smooth;
 }
 
-html, body, #root {
+html,
+body,
+#root {
   width: 100%;
   height: 100%;
   margin: 0;
   padding: 0;
   overflow: hidden;
-  position: fixed; 
+  position: fixed;
   left: 0;
   top: 0;
 }
@@ -24,7 +26,7 @@ body {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  overflow-x: hidden; 
+  overflow-x: hidden;
   overflow-y: auto;
 }
 
@@ -36,8 +38,23 @@ body {
   z-index: 1;
 }
 
-button, a {
+button,
+a {
   position: relative;
   z-index: 5;
   cursor: pointer;
+}
+
+svg text {
+  font-weight: 300 !important; /* Lighter font weight */
+  /* Keeping the original font family */
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* For specific SVG text elements with Times New Roman */
+svg text[font-family="Times New Roman"] {
+  font-weight: 300 !important; /* Lighter weight */
+  stroke-width: 0.5 !important; /* Thinner stroke if applicable */
 }
