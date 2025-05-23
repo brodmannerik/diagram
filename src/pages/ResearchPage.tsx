@@ -1,5 +1,5 @@
 import { Button, Flex, Text, Theme } from "@radix-ui/themes";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import {
   useCallback,
   useEffect,
@@ -41,6 +41,7 @@ interface CanvasData {
 
 function ResearchPage() {
   const navigate = useNavigate();
+  const { groupId: paramGroupId } = useParams();
   const [canvasData, setCanvasData] = useState<CanvasData | null>(null);
   const [scale, setScale] = useState(1);
   const [position, setPosition] = useState({ x: 0, y: 0 });
@@ -677,6 +678,62 @@ function ResearchPage() {
     return () => window.removeEventListener("resize", handleResize);
   }, [drawEdgesOnCanvas]);
 
+  // Get the group ID from the URL parameters
+  const groupId = paramGroupId || "main";
+
+  useEffect(() => {
+    // Load specific data based on group ID
+    console.log(`Loading research data for group: ${groupId}`);
+
+    const loadCanvasData = async () => {
+      setLoading(true);
+      setError(null);
+
+      try {
+        // Modify the fetch URL based on the group ID
+        const response = await fetch(`/api/canvasData?groupId=${groupId}`);
+        if (!response.ok) {
+          throw new Error(`Error fetching data: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        setCanvasData(data);
+        setNodeCount(data.nodes.length);
+        setEdgeCount(data.edges.length);
+
+        // Center the canvas on the first load
+        if (!position.x && !position.y) {
+          centerCanvas(data);
+        }
+      } catch (err) {
+        console.error(err);
+        setError("Failed to load canvas data.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadCanvasData();
+  }, [groupId]);
+
+  // Customize the page title based on group
+  const getPageTitle = () => {
+    switch (groupId) {
+      case "settler":
+        return "Anastasia Settler Research";
+      case "esoteric":
+        return "Right-wing Esoteric Research";
+      case "conspiricists":
+        return "Conspiricists Research";
+      case "reich":
+        return "Citizens of the Reich Research";
+      case "nazis":
+        return "Nazis Research";
+      default:
+        return "Research Map";
+    }
+  };
+
   return (
     <div style={{ height: "100vh", width: "100vw", position: "relative" }}>
       {/* Top left button (same as main page) */}
@@ -715,6 +772,32 @@ function ResearchPage() {
         }}
       >
         <Button size="4" onClick={() => navigate("/")} style={buttonStyle}>
+          Back to Diagram
+        </Button>
+      </div>
+
+      {/* Add a back button to return to the main diagram */}
+      <div
+        style={{
+          position: "absolute",
+          top: "10px",
+          right: "20px",
+          zIndex: 1000,
+        }}
+      >
+        <Button
+          size="3"
+          variant="soft"
+          onClick={() => navigate("/")}
+          style={{
+            backgroundColor: "white",
+            color: "#0000FF",
+            border: "1px solid #0000FF",
+            padding: "8px 16px",
+            borderRadius: "4px",
+            cursor: "pointer",
+          }}
+        >
           Back to Diagram
         </Button>
       </div>

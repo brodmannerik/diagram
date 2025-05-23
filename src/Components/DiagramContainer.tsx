@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 
 export type DiagramType = "main" | "alternative1" | "alternative2";
 type Language = "en" | "de";
@@ -7,7 +8,7 @@ export interface DiagramProps {
   className?: string;
   diagramType?: DiagramType;
   language?: Language;
-  isColored?: boolean; // This prop now controls color conversion
+  isColored?: boolean;
 }
 
 const containerStyle = {
@@ -25,14 +26,14 @@ const DiagramContainer: React.FC<DiagramProps> = ({
   className = "",
   diagramType = "main",
   language = "en",
-  isColored = false, // Default to non-colored (convert to blue)
 }) => {
   const [svgContent, setSvgContent] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate(); // Add this for navigation
 
   useEffect(() => {
-    // Always use the colored SVG
-    const svgFile = "/my-diagram-color.svg";
+    // Use the new relations.svg file
+    const svgFile = "/relations.svg";
 
     fetch(svgFile)
       .then((response) => response.text())
@@ -41,250 +42,39 @@ const DiagramContainer: React.FC<DiagramProps> = ({
         const svgDoc = parser.parseFromString(text, "image/svg+xml");
         const svgElement = svgDoc.documentElement;
 
-        // Store original viewBox and dimensions
-        const originalViewBox = svgElement.getAttribute("viewBox");
-        const originalWidth = svgElement.getAttribute("width");
-        const originalHeight = svgElement.getAttribute("height");
+        // Setup proper sizing and positioning with slightly reduced size
+        svgElement.setAttribute("width", "120%"); // Reduced from 140%
+        svgElement.setAttribute("height", "120%"); // Reduced from 140%
 
-        // Ensure we have a viewBox (needed for non-scaling-stroke to work properly)
-        if (!originalViewBox && originalWidth && originalHeight) {
-          // If no viewBox but has width/height, create one
-          const width = parseFloat(originalWidth);
-          const height = parseFloat(originalHeight);
+        // Keep meet aspect ratio but allow it to be larger than container
+        svgElement.setAttribute("preserveAspectRatio", "xMidYMid meet");
+
+        // Keep original viewBox or create one if missing
+        if (!svgElement.hasAttribute("viewBox")) {
+          const width = svgElement.getAttribute("width") || "800";
+          const height = svgElement.getAttribute("height") || "600";
           svgElement.setAttribute("viewBox", `0 0 ${width} ${height}`);
         }
 
-        // If not in colored mode, convert non-blue and non-black colors to blue
-        if (!isColored) {
-          // Process color attributes in SVG elements
-          function processColors(element: Element) {
-            // Process fill attributes
-            if (element.hasAttribute("fill")) {
-              const fill = element.getAttribute("fill");
-              // Only change non-blue, non-black, and non-none fills
-              if (
-                fill !== "#0000FF" &&
-                fill !== "blue" &&
-                fill !== "#000000" &&
-                fill !== "black" &&
-                fill !== "none" &&
-                fill !== "transparent"
-              ) {
-                element.setAttribute("fill", "#0000FF");
-              }
-            }
-
-            // Process stroke attributes
-            if (element.hasAttribute("stroke")) {
-              const stroke = element.getAttribute("stroke");
-              // Only change non-blue, non-black, and non-none strokes
-              if (
-                stroke !== "#0000FF" &&
-                stroke !== "blue" &&
-                stroke !== "#000000" &&
-                stroke !== "black" &&
-                stroke !== "none" &&
-                stroke !== "transparent"
-              ) {
-                element.setAttribute("stroke", "#0000FF");
-              }
-            }
-
-            // Process style attributes
-            if (element.hasAttribute("style")) {
-              let styleAttr = element.getAttribute("style") || "";
-
-              // Process fill in style attribute
-              styleAttr = styleAttr.replace(
-                /fill\s*:\s*([^;]+)/g,
-                (match, color) => {
-                  // Keep blue, black, none, and transparent colors
-                  if (
-                    color.includes("blue") ||
-                    color.includes("#0000FF") ||
-                    color.includes("black") ||
-                    color.includes("#000000") ||
-                    color.includes("none") ||
-                    color.includes("transparent")
-                  ) {
-                    return match;
-                  }
-                  return "fill: #0000FF";
-                }
-              );
-
-              // Process stroke in style attribute
-              styleAttr = styleAttr.replace(
-                /stroke\s*:\s*([^;]+)/g,
-                (match, color) => {
-                  // Keep blue, black, none, and transparent colors
-                  if (
-                    color.includes("blue") ||
-                    color.includes("#0000FF") ||
-                    color.includes("black") ||
-                    color.includes("#000000") ||
-                    color.includes("none") ||
-                    color.includes("transparent")
-                  ) {
-                    return match;
-                  }
-                  return "stroke: #0000FF";
-                }
-              );
-
-              element.setAttribute("style", styleAttr);
-            }
-
-            // Process all child elements recursively
-            for (let i = 0; i < element.children.length; i++) {
-              processColors(element.children[i]);
-            }
-          }
-
-          // Process CSS in style elements
-          const styleElements = svgDoc.querySelectorAll("style");
-          styleElements.forEach((style) => {
-            let cssText = style.textContent || "";
-
-            // Replace all colors except blue, black, none, and transparent
-            // This regex is more complex to avoid capturing blue and black
-            cssText = cssText.replace(
-              /([^-])color\s*:\s*(?!blue|#0000FF|black|#000000|none|transparent)([^;]+)/g,
-              "$1color: #0000FF"
-            );
-
-            cssText = cssText.replace(
-              /([^-])fill\s*:\s*(?!blue|#0000FF|black|#000000|none|transparent)([^;]+)/g,
-              "$1fill: #0000FF"
-            );
-
-            cssText = cssText.replace(
-              /([^-])stroke\s*:\s*(?!blue|#0000FF|black|#000000|none|transparent)([^;]+)/g,
-              "$1stroke: #0000FF"
-            );
-
-            style.textContent = cssText;
-          });
-
-          // Process all elements starting from the root
-          processColors(svgElement);
-        }
-
-        // The viewBox is critical for non-scaling-stroke to work properly
-        // Add custom CSS to enforce stroke width more aggressively
-        const styleElement = svgDoc.createElementNS(
-          "http://www.w3.org/2000/svg",
-          "style"
-        );
-        styleElement.textContent = `
-          * {
-            vector-effect: non-scaling-stroke !important;
-          }
-          path, line, polyline, rect, circle, ellipse, polygon {
-            vector-effect: non-scaling-stroke !important;
-          }
-        `;
-        svgElement.appendChild(styleElement);
-
-        // Set SVG to be responsive while preserving aspect ratio
-        svgElement.setAttribute("width", "100%");
-        svgElement.setAttribute("height", "100%");
-        svgElement.setAttribute("preserveAspectRatio", "xMidYMid meet");
-
-        // Add basic centering style
+        // Add basic styling with slightly reduced scale
         const existingStyle = svgElement.getAttribute("style") || "";
         svgElement.setAttribute(
           "style",
-          existingStyle + "; display: block; margin: 0 auto;"
+          existingStyle +
+            "; display: block; margin: 0 auto; transform: scale(1.3); transform-origin: center center;"
         );
 
-        // Apply your existing stroke processing code
-        function processStrokeWidths(element: Element) {
-          // Make sure all elements with strokes have vector-effect
-          if (
-            element.hasAttribute("stroke") ||
-            element.tagName.toLowerCase() === "path" ||
-            element.tagName.toLowerCase() === "line" ||
-            element.tagName.toLowerCase() === "polyline" ||
-            element.tagName.toLowerCase() === "rect" ||
-            element.tagName.toLowerCase() === "circle" ||
-            element.tagName.toLowerCase() === "ellipse" ||
-            element.tagName.toLowerCase() === "polygon"
-          ) {
-            element.setAttribute("vector-effect", "non-scaling-stroke");
-          }
+        // Process text elements for better rendering with smaller increase
+        const textElements = svgDoc.querySelectorAll("text");
+        textElements.forEach((text) => {
+          text.setAttribute("font-weight", "300");
+          text.setAttribute("text-rendering", "optimizeLegibility");
 
-          // Process stroke-width attribute - reduce to half
-          if (element.hasAttribute("stroke-width")) {
-            const currentWidth = parseFloat(
-              element.getAttribute("stroke-width") || "1"
-            );
-            element.setAttribute("stroke-width", String(currentWidth / 2));
-          }
-
-          // Process stroke-width in style attribute
-          if (element.hasAttribute("style")) {
-            let styleAttr = element.getAttribute("style") || "";
-
-            // Add vector-effect to inline style
-            if (!styleAttr.includes("vector-effect")) {
-              styleAttr += "; vector-effect: non-scaling-stroke";
-            }
-
-            // Reduce stroke width in inline style
-            styleAttr = styleAttr.replace(
-              /stroke-width\s*:\s*([0-9.]+)([a-z%]*)/g,
-              (width, unit) => {
-                const halfWidth = parseFloat(width) / 2;
-                return `stroke-width:${halfWidth}${unit}`;
-              }
-            );
-
-            element.setAttribute("style", styleAttr);
-          }
-
-          // If element has a stroke but no stroke-width, add a default half-thickness
-          if (
-            (element.hasAttribute("stroke") ||
-              [
-                "path",
-                "line",
-                "polyline",
-                "rect",
-                "circle",
-                "ellipse",
-                "polygon",
-              ].includes(element.tagName.toLowerCase())) &&
-            !element.hasAttribute("stroke-width")
-          ) {
-            element.setAttribute("stroke-width", "0.5"); // Default half thickness
-          }
-
-          // Process all child elements recursively
-          for (let i = 0; i < element.children.length; i++) {
-            processStrokeWidths(element.children[i]);
-          }
-        }
-
-        // Process CSS in style elements for stroke width
-        const existingStyleElements = svgDoc.querySelectorAll("style");
-        existingStyleElements.forEach((style) => {
-          let cssText = style.textContent || "";
-          // Replace stroke-width in CSS
-          cssText = cssText.replace(
-            /stroke-width\s*:\s*([0-9.]+)([a-z%]*)/g,
-            // @ts-ignore
-            (match, width, unit) => {
-              const halfWidth = parseFloat(width) / 2;
-              return `stroke-width:${halfWidth}${unit}`;
-            }
-          );
-
-          style.textContent = cssText;
+          // Make text slightly larger, but less than before
+          const currentSize = text.getAttribute("font-size") || "12";
+          const newSize = parseInt(currentSize) * 1.1;
+          text.setAttribute("font-size", newSize.toString());
         });
-
-        // Start processing from the SVG root
-        processStrokeWidths(svgElement);
 
         // Convert the modified SVG back to a string
         const serializer = new XMLSerializer();
@@ -295,7 +85,103 @@ const DiagramContainer: React.FC<DiagramProps> = ({
       .catch((error) => {
         console.error("Error loading SVG:", error);
       });
-  }, [diagramType, language, isColored]);
+  }, [diagramType, language]);
+
+  // Add this new effect to handle clicks after the SVG is loaded
+  useEffect(() => {
+    if (!svgContent || !containerRef.current) return;
+
+    // Wait a bit for the SVG to be fully rendered in the DOM
+    const timer = setTimeout(() => {
+      const svgContainer = containerRef.current?.querySelector("svg");
+      if (!svgContainer) return;
+
+      // Function to check text and determine which group it belongs to
+      const getGroupId = (text) => {
+        text = text.toLowerCase();
+        if (text.includes("anastasia") || text.includes("settler"))
+          return "settler";
+        if (text.includes("esoteric") || text.includes("right-wing"))
+          return "esoteric";
+        if (text.includes("conspir")) return "conspiricists";
+        if (text.includes("reich") || text.includes("citizen")) return "reich";
+        if (text.includes("nazi")) return "nazis";
+        return null;
+      };
+
+      // Add click handlers to both text elements and their parent groups
+      const allElements = svgContainer.querySelectorAll("*");
+      allElements.forEach((el) => {
+        // Check text content
+        const text = el.textContent?.trim() || "";
+        const groupId = getGroupId(text);
+
+        if (groupId) {
+          // Find the parent rect or group for this text
+          let targetElement = el;
+          let parent = el.parentElement;
+
+          // Look for a good clickable parent
+          while (parent && parent.tagName !== "svg") {
+            if (parent.tagName === "g" || parent.tagName === "rect") {
+              targetElement = parent;
+              break;
+            }
+            parent = parent.parentElement;
+          }
+
+          // Make the element clickable
+          targetElement.style.cursor = "pointer";
+          targetElement.addEventListener("click", () => {
+            console.log(`Clicked on ${groupId}`);
+            navigate(`/research/${groupId}`);
+          });
+        }
+
+        // Also check for rectangle elements with specific fill colors or other attributes
+        if (el.tagName === "rect") {
+          // Save the original styles
+          const originalFill = el.getAttribute("fill");
+          const originalStroke = el.getAttribute("stroke");
+
+          // Check if this rect has nearby text that indicates a group
+          const parentGroup = el.parentElement;
+          if (parentGroup) {
+            const nearbyTexts = Array.from(
+              parentGroup.querySelectorAll("text")
+            ).map((text) => text.textContent?.trim() || "");
+
+            for (const text of nearbyTexts) {
+              const groupId = getGroupId(text);
+              if (groupId) {
+                // Make this rect clickable
+                el.style.cursor = "pointer";
+                el.addEventListener("click", () => {
+                  console.log(`Clicked on ${groupId} (from rect)`);
+                  navigate(`/research/${groupId}`);
+                });
+
+                // Add hover effect
+                el.addEventListener("mouseenter", () => {
+                  el.setAttribute("fill-opacity", "0.8");
+                  el.setAttribute("stroke-width", "2");
+                });
+
+                el.addEventListener("mouseleave", () => {
+                  el.setAttribute("fill-opacity", "1");
+                  el.setAttribute("stroke-width", "1");
+                });
+
+                break;
+              }
+            }
+          }
+        }
+      });
+    }, 200); // Small delay to ensure SVG is in the DOM
+
+    return () => clearTimeout(timer);
+  }, [svgContent, navigate]);
 
   return (
     <div
@@ -312,6 +198,7 @@ const DiagramContainer: React.FC<DiagramProps> = ({
             display: "flex",
             justifyContent: "center",
             alignItems: "center",
+            overflow: "hidden",
           }}
         />
       ) : (

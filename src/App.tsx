@@ -7,11 +7,11 @@ import ResearchPage from "./pages/ResearchPage";
 type Language = "en" | "de";
 
 type HoverElementType =
-  | "variable"
-  | "flow"
-  | "connection"
-  | "condition"
-  | "process"
+  | "settler"
+  | "esoteric"
+  | "conspiricists"
+  | "reich"
+  | "nazis"
   | "none";
 
 type ButtonHoverType = "paper" | "color" | "title" | "none";
@@ -22,6 +22,26 @@ function App() {
       <Routes>
         <Route path="/" element={<DiagramView />} />
         <Route path="/research" element={<ResearchPage />} />
+        <Route
+          path="/research/settler"
+          element={<ResearchPage groupId="settler" />}
+        />
+        <Route
+          path="/research/esoteric"
+          element={<ResearchPage groupId="esoteric" />}
+        />
+        <Route
+          path="/research/conspiricists"
+          element={<ResearchPage groupId="conspiricists" />}
+        />
+        <Route
+          path="/research/reich"
+          element={<ResearchPage groupId="reich" />}
+        />
+        <Route
+          path="/research/nazis"
+          element={<ResearchPage groupId="nazis" />}
+        />
       </Routes>
     </BrowserRouter>
   );
@@ -44,12 +64,6 @@ function DiagramView() {
     alternative2: "Alternative View 2",
   };
 
-  const colorLabels = {
-    colored: "Blue",
-    bw: "Colored",
-  };
-
-  // Handle paper button click - now navigates to research page
   const handlePaperClick = () => {
     console.log("Navigating to research page");
     navigate("/research");
@@ -68,35 +82,14 @@ function DiagramView() {
     }
   };
 
-  const toggleColor = () => {
-    console.log("Toggling color");
-    setIsColored((prev) => !prev);
-  };
-
   // Set up hover detection
   useEffect(() => {
     // Function to handle mouse over events on SVG elements
     const handleMouseOver = (e: MouseEvent) => {
-      // Only process SVG element hovers when no button is being hovered
+      // Set hover state for any diagram element
+      // Ignore hover when buttons are being hovered
       if (buttonHover === "none") {
-        const target = e.target as Element;
-        console.log("Hovered element:", target);
-
-        if (
-          target.tagName === "rect" ||
-          target.classList.contains("variable")
-        ) {
-          setHoverElement("variable");
-        } else if (target.tagName === "path" || target.tagName === "line") {
-          setHoverElement("connection");
-        } else if (
-          target.tagName === "diamond" ||
-          target.classList.contains("condition")
-        ) {
-          setHoverElement("condition");
-        } else {
-          setHoverElement("none");
-        }
+        setHoverElement("settler"); // We'll use this state for all diagram hovers
       }
     };
 
@@ -110,7 +103,6 @@ function DiagramView() {
     // Add event listeners to the SVG container
     const svgContainer = document.querySelector(".diagram-container");
     if (svgContainer) {
-      // @ts-ignore
       svgContainer.addEventListener("mouseover", handleMouseOver);
       svgContainer.addEventListener("mouseout", handleMouseOut);
     }
@@ -118,12 +110,11 @@ function DiagramView() {
     // Clean up event listeners on unmount or when dependencies change
     return () => {
       if (svgContainer) {
-        // @ts-ignore
         svgContainer.removeEventListener("mouseover", handleMouseOver);
         svgContainer.removeEventListener("mouseout", handleMouseOut);
       }
     };
-  }, [isColored, buttonHover]);
+  }, [buttonHover]);
 
   const buttonStyle = {
     padding: "16px 32px",
@@ -146,31 +137,18 @@ function DiagramView() {
     border: "1px solid #0000FF",
   };
 
-  // Helper function to get info text based on hover state
+  // Simplify the info text function
   const getInfoText = (): string => {
+    // Just return a simple message for any hover
+    if (hoverElement !== "none") {
+      return "Click to open subpage";
+    }
+
+    // Show button-specific messages when buttons are hovered
     if (buttonHover === "paper") return "Open Research";
-    if (buttonHover === "color") return "Show Color";
     if (buttonHover === "title") return "Switch Diagram";
 
-    return getElementDescription(hoverElement);
-  };
-
-  const getElementDescription = (type: HoverElementType): string => {
-    switch (type) {
-      case "variable":
-        return "Variable";
-      case "flow":
-        return "Flow";
-      case "connection":
-        return "Connection";
-      case "condition":
-        return "Condition";
-      case "process":
-        return "Process";
-      case "none":
-      default:
-        return "Hover over elements";
-    }
+    return "Hover over elements";
   };
 
   return (
@@ -197,16 +175,13 @@ function DiagramView() {
           {diagramLabels[diagramType]}
         </Button>
 
-        {/* Color toggle button */}
-        <Button
+        {/* <Button
           size="4"
           onClick={toggleColor}
           style={whiteButtonStyle}
-          onMouseEnter={() => setButtonHover("color")}
-          onMouseLeave={() => setButtonHover("none")}
         >
           {isColored ? colorLabels.colored : colorLabels.bw}
-        </Button>
+        </Button> */}
       </Flex>
 
       {/* Bottom left button - fixed position */}
